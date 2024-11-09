@@ -1,0 +1,107 @@
+services:
+#  tugas_akhir_core_service:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: tugas_akhir_core_service
+#    working_dir: /usr/src/app
+#    env_file:
+#      - path: .env.docker
+#        required: true
+#    volumes:
+#      - service_data:/usr/src/app
+#    depends_on:
+#      - tugas_akhir_mysql
+#      - tugas_akhir_elasticsearch
+#    ports:
+#      - "3000:3000"
+#    networks:
+#      - tugas_akhir
+
+  tugas_akhir_mysql:
+    image: mysql:8.1
+    container_name: tugas_akhir_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tugas_akhir
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - tugas_akhir
+
+  tugas_akhir_elasticsearch:
+    image: elasticsearch:8.14.3
+    container_name: tugas_akhir_elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - tugas_akhir
+
+  tugas_akhir_zookeeper:
+    image: debezium/zookeeper:2.7
+    container_name: tugas_akhir_zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
+    networks:
+      - tugas_akhir
+
+  tugas_akhir_kafka:
+    image: debezium/kafka:2.7
+    container_name: tugas_akhir_kafka
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CONNECT: tugas_akhir_zookeeper
+    ports:
+      - "9092:9092"
+    depends_on:
+      - tugas_akhir_zookeeper
+    networks:
+      - tugas_akhir
+
+  tugas_akhir_kafka_connect:
+    build:
+      context: .
+      dockerfile: Dockerfile.connect
+    container_name: tugas_akhir_kafka_connect
+    restart: unless-stopped
+    environment:
+      BOOTSTRAP_SERVERS: tugas_akhir_kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: tugas_akhir_kafka_connect_configs
+      OFFSET_STORAGE_TOPIC: tugas_akhir_kafka_connect_offsets
+      STATUS_STORAGE_TOPIC: tugas_akhir_kafka_connect_statuses
+    links:
+      - tugas_akhir_kafka:tugas_akhir_kafka
+      - tugas_akhir_elasticsearch:tugas_akhir_elasticsearch
+    ports:
+      - "8083:8083"
+    networks:
+      - tugas_akhir
+    depends_on:
+      - tugas_akhir_elasticsearch
+      - tugas_akhir_kafka
+
+volumes:
+  service_data:
+  es_data:
+  mysql_data:
+  logstash_data:
+
+networks:
+  tugas_akhir:
+    driver: bridge

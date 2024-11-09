@@ -1,0 +1,2 @@
+FROM debezium/connect:2.7
+COPY ./.docker/confluentinc-kafka-connect-elasticsearch-14.1.0/lib/ /kafka/connect/kafka-connect-jdbc/

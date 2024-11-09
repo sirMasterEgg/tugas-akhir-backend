@@ -1,0 +1,1 @@
+docker exec -it tugas_akhir_kafka /kafka/bin/kafka-console-consumer.sh --bootstrap-server tugas_akhir_kafka:9092 --topic dbserver1.tugas_akhir.users --from-beginning
