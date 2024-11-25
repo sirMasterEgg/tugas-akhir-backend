@@ -15,6 +15,7 @@ import { CreatePostWDto } from './dto/create-post-w.dto';
 import { CurrentUser } from '../current-user/current-user.decorator';
 import { User } from '../user/entities/user.entity';
 import { AuthWithRoles } from 'src/auth/auth.decorator';
+import { Punishment } from '../punishment/punishment.decorator';
 
 @WebSocketGateway(3001, {
   cors: {
@@ -45,6 +46,7 @@ export class PostWsGateway
     this.logger.log('Client ' + client.id + ' disconnected');
   }
 
+  @Punishment()
   @SubscribeMessage(WsMessage.FETCH_POSTS)
   async create(
     @CurrentUser() user: User,

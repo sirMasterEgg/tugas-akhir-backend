@@ -11,4 +11,6 @@ COPY . .
 
 EXPOSE 3000
 
+ENV TZ='Etc/GMT'
+
 CMD ["npm", "start"]

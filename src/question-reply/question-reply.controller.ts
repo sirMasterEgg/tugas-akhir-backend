@@ -5,12 +5,14 @@ import { UpdateQuestionReplyDto } from './dto/update-question-reply.dto';
 import { AuthWithRoles } from '../auth/auth.decorator';
 import { CurrentUser } from '../current-user/current-user.decorator';
 import { User } from '../user/entities/user.entity';
+import { Punishment } from '../punishment/punishment.decorator';
 
 @AuthWithRoles('user')
 @Controller('reply/:postId')
 export class QuestionReplyController {
   constructor(private readonly questionReplyService: QuestionReplyService) {}
 
+  @Punishment()
   @Post()
   create(
     @CurrentUser() user: User,

@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { FindOptionsWhere, ILike, IsNull, Repository } from 'typeorm';
@@ -22,6 +27,10 @@ import { QuestionReply } from '../question-reply/entities/question-reply.entity'
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Events } from '../post-ws/enums/ws-message.enum';
 import { NotificationObserverDto } from '../notification-observer/dto/NotificationObserverDto';
+import { ConfigService } from '@nestjs/config';
+import { AddAdminDto } from './dto/add-admin.dto';
+import { hashSync } from 'bcrypt';
+import { UpdateAdminDto } from './dto/update-admin.dto';
 
 @Injectable()
 export class AdminService {
@@ -31,6 +40,7 @@ export class AdminService {
     private readonly reportRepository: Repository<Report>,
     @InjectRepository(PunishmentStatus)
     private readonly userPunishmentRepository: Repository<PunishmentStatus>,
+    private configService: ConfigService,
     private readonly eventEmmiter: EventEmitter2,
   ) {}
 
@@ -370,5 +380,101 @@ export class AdminService {
       reply: data.reply,
       question: data.question,
     };
+  }
+
+  async getManagePage(page: number, size: number, q: string, key: string) {
+    if (!page || page < 1) page = 1;
+    const take: number = size || 10;
+    const skip = (page - 1) * take;
+
+    if (key !== this.configService.get<string>('ADMIN_KEY')) {
+      throw new UnauthorizedException('Invalid admin key');
+    }
+
+    const [users, usersCount] = await this.userRepository.findAndCount({
+      where: {
+        role: UserRoleEnum.ADMIN,
+        ...(q && { username: ILike(`%${q}%`) }),
+      },
+      skip,
+      take,
+    });
+
+    return {
+      users: TrimmedUserMapper.fromUserList(users),
+      meta: MetadataMapper.fromMetadata({
+        page,
+        totalPage: Math.ceil(usersCount / take),
+      }),
+    };
+  }
+
+  async doActionOnManagePage(body: AddAdminDto) {
+    if (body.key !== this.configService.get<string>('ADMIN_KEY')) {
+      throw new UnauthorizedException('Invalid admin key');
+    }
+
+    try {
+      const user = this.userRepository.create({
+        name: body.name,
+        username: body.username,
+        email: body.email,
+        password: hashSync(body.password, 10),
+        birthday: new Date(),
+        acceptQuestion: false,
+        role: UserRoleEnum.ADMIN,
+      });
+
+      await this.userRepository.save(user);
+      return { message: 'Admin added' };
+    } catch (e) {
+      throw new BadRequestException('Failed to add admin');
+    }
+  }
+
+  async deleteAdmin(id: string, key: string) {
+    if (key !== this.configService.get<string>('ADMIN_KEY')) {
+      throw new UnauthorizedException('Invalid admin key');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id, role: UserRoleEnum.ADMIN },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Admin not found');
+    }
+
+    await this.userRepository.delete(user.id);
+    return { message: 'Admin deleted' };
+  }
+
+  async updateAdmin(id: string, body: UpdateAdminDto) {
+    if (body.key !== this.configService.get<string>('ADMIN_KEY')) {
+      throw new UnauthorizedException('Invalid admin key');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id, role: UserRoleEnum.ADMIN },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Admin not found');
+    }
+
+    if (body.name) user.name = body.name;
+    if (body.username) user.username = body.username;
+    if (body.email) user.email = body.email;
+    if (body.password) user.password = hashSync(body.password, 10);
+
+    await this.userRepository.save(user);
+    return { message: 'Admin updated' };
+  }
+
+  checkKey(key: string) {
+    if (key !== this.configService.get<string>('ADMIN_KEY')) {
+      throw new UnauthorizedException('Invalid admin key');
+    }
+    return { message: 'Valid key' };
   }
 }

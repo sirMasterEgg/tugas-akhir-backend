@@ -27,6 +27,7 @@ import { LogoutResponseDto } from './dto/logout-response.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResetPasswordResponseDto } from './dto/reset-password-response.dto';
 import { TrimmedUser, TrimmedUserMapper } from '../mapper/trimmed-user.entity';
+import { UserPunishmentStatusEnum } from '../admin/entities/user-status.entity';
 
 @Injectable()
 export class AuthService {
@@ -100,6 +101,10 @@ export class AuthService {
 
     if (!(await compare(loginDto.password, user.password))) {
       throw new UnauthorizedException('Login failed');
+    }
+
+    if (user?.status?.userStatus === UserPunishmentStatusEnum.BANNED) {
+      throw new UnauthorizedException('User is banned');
     }
 
     const [accessToken, refreshToken] = await this.assignToken(user);
@@ -197,6 +202,13 @@ export class AuthService {
     if (!refreshToken) {
       throw new UnauthorizedException('Invalid token');
     }
+
+    if (
+      refreshToken?.user?.status?.userStatus === UserPunishmentStatusEnum.BANNED
+    ) {
+      throw new UnauthorizedException('User is banned');
+    }
+
     const accessToken = await this.jwtService.signAsync(
       TrimmedUserMapper.fromUser(refreshToken.user),
       {

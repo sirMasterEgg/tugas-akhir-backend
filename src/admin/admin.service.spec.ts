@@ -10,9 +10,15 @@ import {
 } from '../report/entities/report.entity';
 import { PunishmentStatus } from './entities/user-status.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Question } from '../user/entities/question.entity';
 import { QuestionReply } from '../question-reply/entities/question-reply.entity';
+import { ConfigService } from '@nestjs/config';
+import { UserRoleEnum } from '../enums/user-role.enum';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -20,6 +26,7 @@ describe('AdminService', () => {
   let reportRepository: Repository<Report>;
   let punishmentStatusRepository: Repository<PunishmentStatus>;
   let eventEmitter: EventEmitter2;
+  let configService: ConfigService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -28,6 +35,12 @@ describe('AdminService', () => {
         {
           provide: getRepositoryToken(User),
           useClass: Repository,
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn(),
+          },
         },
         {
           provide: getRepositoryToken(Report),
@@ -71,6 +84,7 @@ describe('AdminService', () => {
       getRepositoryToken(PunishmentStatus),
     );
     eventEmitter = module.get<EventEmitter2>(EventEmitter2);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -702,6 +716,178 @@ describe('AdminService', () => {
         question: undefined,
         reply: null, // Depending on your implementation, it might be undefined or throw an error
       });
+    });
+  });
+
+  describe('getManagePage', () => {
+    it('should throw UnauthorizedException if admin key is invalid', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+
+      await expect(
+        service.getManagePage(1, 10, '', 'wrong-key'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should return paginated users with metadata', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+      userRepository.findAndCount = jest
+        .fn()
+        .mockResolvedValue([
+          [{ id: 1, username: 'admin', role: UserRoleEnum.ADMIN }],
+          1,
+        ]);
+
+      const result = await service.getManagePage(1, 10, '', 'correct-key');
+
+      expect(result).toEqual({
+        users: expect.any(Array),
+        meta: { currentPage: 1, nextPage: null, totalPage: 1 },
+      });
+      expect(userRepository.findAndCount).toHaveBeenCalled();
+    });
+  });
+
+  describe('doActionOnManagePage', () => {
+    it('should throw UnauthorizedException if admin key is invalid', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+
+      await expect(
+        service.doActionOnManagePage({
+          key: 'wrong-key',
+          name: 'admin',
+          username: 'admin',
+          email: '',
+          password: '',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should create and save a new admin', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+      userRepository.create = jest
+        .fn()
+        .mockReturnValue({ id: 1, name: 'admin' });
+      userRepository.save = jest
+        .fn()
+        .mockResolvedValue({ id: 1, name: 'admin' });
+
+      const result = await service.doActionOnManagePage({
+        key: 'correct-key',
+        name: 'admin',
+        email: 'admin@example.com',
+        password: 'password',
+        username: 'admin',
+      });
+
+      expect(result).toEqual({ message: 'Admin added' });
+      expect(userRepository.create).toHaveBeenCalledWith(expect.any(Object));
+      expect(userRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException if save fails', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+      userRepository.save = jest.fn().mockRejectedValue(new Error());
+
+      await expect(
+        service.doActionOnManagePage({
+          key: 'correct-key',
+          name: 'admin',
+          email: 'admin@example.com',
+          password: 'password',
+          username: 'admin',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('deleteAdmin', () => {
+    it('should throw UnauthorizedException if admin key is invalid', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+
+      await expect(service.deleteAdmin('1', 'wrong-key')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw NotFoundException if admin not found', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(service.deleteAdmin('1', 'correct-key')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should delete the admin', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+      userRepository.findOne = jest
+        .fn()
+        .mockResolvedValue({ id: 1, role: UserRoleEnum.ADMIN });
+      userRepository.delete = jest.fn().mockResolvedValue(null);
+
+      const result = await service.deleteAdmin('1', 'correct-key');
+
+      expect(result).toEqual({ message: 'Admin deleted' });
+      expect(userRepository.findOne).toHaveBeenCalled();
+      expect(userRepository.delete).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('updateAdmin', () => {
+    it('should throw UnauthorizedException if admin key is invalid', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+
+      await expect(
+        service.updateAdmin('1', { key: 'wrong-key', name: 'new-admin' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw NotFoundException if admin not found', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.updateAdmin('1', { key: 'correct-key', name: 'new-admin' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should update admin details', async () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+      userRepository.findOne = jest
+        .fn()
+        .mockResolvedValue({ id: 1, name: 'admin' });
+      userRepository.save = jest
+        .fn()
+        .mockResolvedValue({ id: 1, name: 'new-admin' });
+
+      const result = await service.updateAdmin('1', {
+        key: 'correct-key',
+        name: 'new-admin',
+      });
+
+      expect(result).toEqual({ message: 'Admin updated' });
+      expect(userRepository.findOne).toHaveBeenCalled();
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'new-admin' }),
+      );
+    });
+  });
+
+  describe('checkKey', () => {
+    it('should throw UnauthorizedException if admin key is invalid', () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+
+      expect(() => service.checkKey('wrong-key')).toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should return valid message for correct key', () => {
+      configService.get = jest.fn().mockReturnValue('correct-key');
+
+      const result = service.checkKey('correct-key');
+
+      expect(result).toEqual({ message: 'Valid key' });
     });
   });
 });
