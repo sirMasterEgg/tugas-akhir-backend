@@ -6,4 +6,6 @@ RUN mkdir -p /kafka/connect/kafka-connect-jdbc/ && \
     unzip /kafka/connect/kafka-connect-jdbc/confluentinc-kafka-connect-elasticsearch-14.0.0.zip -d /kafka/connect/kafka-connect-jdbc/ && \
     rm /kafka/connect/kafka-connect-jdbc/confluentinc-kafka-connect-elasticsearch-14.0.0.zip
 
-RUN mv /kafka/connect/kafka-connect-jdbc/lib/* /kafka/connect/kafka-connect-jdbc/
+RUN ls -la /kafka/connect/kafka-connect-jdbc/
+
+#RUN mv /kafka/connect/kafka-connect-jdbc/lib/* /kafka/connect/kafka-connect-jdbc/
