@@ -49,7 +49,7 @@ services:
       - tugas_akhir
 
   tugas_akhir_zookeeper:
-    image: debezium/zookeeper:2.7
+    image: debezium/zookeeper:2.7.0.Final
     container_name: tugas_akhir_zookeeper
     restart: unless-stopped
     ports:
@@ -60,7 +60,7 @@ services:
       - tugas_akhir
 
   tugas_akhir_kafka:
-    image: debezium/kafka:2.7
+    image: debezium/kafka:2.7.0.Final
     container_name: tugas_akhir_kafka
     restart: unless-stopped
     environment:
