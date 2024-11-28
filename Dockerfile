@@ -23,4 +23,4 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY package.json ./
 RUN npm install --omit=dev --silent && npm cache clean --force
 EXPOSE 3000
-CMD ["node", "dist/index.js"]
+CMD ["npm", "run", "start:prod"]
