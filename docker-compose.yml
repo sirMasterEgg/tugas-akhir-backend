@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: tugas_akhir_core_service
     working_dir: /usr/src/app
+    restart: unless-stopped
     env_file:
       - .env
     volumes:
