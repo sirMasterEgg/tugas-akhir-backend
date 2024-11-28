@@ -38,7 +38,7 @@ export class FileService {
         return await this.storeFileAws(file, this.bucketName);
       }
 
-      return await this.storeFileAws(file.buffer, this.bucketName);
+      return await this.storeFileAws(Buffer.from(file.buffer), this.bucketName);
     } catch (e) {
       throw e;
     }
