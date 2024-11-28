@@ -1,9 +1,9 @@
 FROM debezium/connect:2.7.0.Final
 
 RUN mkdir -p /kafka/connect/kafka-connect-jdbc/ && \
-    curl -L -o /kafka/connect/kafka-connect-jdbc/confluentinc-kafka-connect-elasticsearch-14.1.0.zip \
+    curl -L -o /kafka/connect/kafka-connect-jdbc/confluentinc-kafka-connect-elasticsearch-14.0.0.zip \
     https://d2p6pa21dvn84.cloudfront.net/api/plugins/confluentinc/kafka-connect-elasticsearch/versions/14.0.0/confluentinc-kafka-connect-elasticsearch-14.0.0.zip && \
-    unzip /kafka/connect/kafka-connect-jdbc/confluentinc-kafka-connect-elasticsearch-14.1.0.zip -d /kafka/connect/kafka-connect-jdbc/ && \
-    rm /kafka/connect/kafka-connect-jdbc/confluentinc-kafka-connect-elasticsearch-14.1.0.zip
+    unzip /kafka/connect/kafka-connect-jdbc/confluentinc-kafka-connect-elasticsearch-14.0.0.zip -d /kafka/connect/kafka-connect-jdbc/ && \
+    rm /kafka/connect/kafka-connect-jdbc/confluentinc-kafka-connect-elasticsearch-14.0.0.zip
 
-RUN mv ./lib/* /kafka/connect/kafka-connect-jdbc/
+RUN mv /kafka/connect/kafka-connect-jdbc/lib/* /kafka/connect/kafka-connect-jdbc/
