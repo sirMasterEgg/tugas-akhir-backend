@@ -24,8 +24,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: tugas_akhir
-      MYSQL_USER: user
-      MYSQL_PASSWORD: user
+#      MYSQL_USER: user
+#      MYSQL_PASSWORD: user
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
