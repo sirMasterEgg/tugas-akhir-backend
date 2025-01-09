@@ -1,4 +1,6 @@
-docker exec -it tugas_akhir_kafka_connect curl -i -X POST \
+#!bin/bash
+
+sudo docker exec -it tugas_akhir_kafka_connect curl -i -X POST \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
   http://localhost:8083/connectors/ \
@@ -19,7 +21,8 @@ docker exec -it tugas_akhir_kafka_connect curl -i -X POST \
       "table.whitelist": "tugas_akhir.users"
     }
   }'
-docker exec -it tugas_akhir_kafka_connect curl -i -X POST \
+
+sudo docker exec -it tugas_akhir_kafka_connect curl -i -X POST \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
   http://localhost:8083/connectors/ \
