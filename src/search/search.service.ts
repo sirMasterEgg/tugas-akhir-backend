@@ -93,6 +93,13 @@ export class SearchService {
         query: {
           bool: {
             ...shouldQuery,
+            must: [
+              {
+                term: {
+                  role: currentUserQuery.role,
+                },
+              },
+            ],
             must_not: [
               {
                 term: {
@@ -108,6 +115,13 @@ export class SearchService {
         query: {
           bool: {
             ...shouldQuery,
+            must: [
+              {
+                term: {
+                  role: currentUserQuery.role, // Ensure users have the same role as the current user
+                },
+              },
+            ],
             must_not: [
               {
                 term: {

@@ -41,6 +41,7 @@ export class PostWsService {
       userToAsk = await this.userRepository.findOne({
         where: {
           id: askDto.userId,
+          acceptQuestion: true,
         },
       });
     }
