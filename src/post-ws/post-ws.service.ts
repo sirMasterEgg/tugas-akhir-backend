@@ -41,7 +41,6 @@ export class PostWsService {
       userToAsk = await this.userRepository.findOne({
         where: {
           id: askDto.userId,
-          acceptQuestion: true,
         },
       });
     }
@@ -55,6 +54,10 @@ export class PostWsService {
 
     if (askDto.userId && askDto.groupId && !userToAsk && !groupToAsk) {
       throw new WsException('User or group not found');
+    }
+
+    if (userToAsk && !userToAsk.acceptQuestion) {
+      throw new WsException('User not accepting questions');
     }
 
     const ask = new Question();
