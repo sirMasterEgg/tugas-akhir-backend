@@ -37,6 +37,8 @@ export class PostWsService {
   ): Promise<TrimmedQuestion> {
     let userToAsk = null,
       groupToAsk = null;
+
+    console.log(askDto);
     if (askDto.userId) {
       userToAsk = await this.userRepository.findOne({
         where: {
@@ -44,6 +46,7 @@ export class PostWsService {
         },
       });
 
+      console.log(userToAsk);
       if (userToAsk && !userToAsk.acceptQuestion) {
         throw new WsException('User not accepting questions');
       }
