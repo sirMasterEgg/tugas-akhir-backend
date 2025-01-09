@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreatePostWDto } from './dto/create-post-w.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Question } from '../user/entities/question.entity';
@@ -38,7 +38,7 @@ export class PostWsService {
     let userToAsk = null,
       groupToAsk = null;
 
-    console.log(askDto);
+    Logger.debug(JSON.stringify(askDto));
     if (askDto.userId) {
       userToAsk = await this.userRepository.findOne({
         where: {
@@ -46,7 +46,7 @@ export class PostWsService {
         },
       });
 
-      console.log(userToAsk);
+      Logger.debug(JSON.stringify(userToAsk));
       if (userToAsk && !userToAsk.acceptQuestion) {
         throw new WsException('User not accepting questions');
       }
