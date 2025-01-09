@@ -15,7 +15,7 @@ docker exec -it tugas_akhir_kafka_connect curl -i -X POST \
       "topic.prefix": "dbserver1",
       "database.include.list": "tugas_akhir",
       "schema.history.internal.kafka.bootstrap.servers": "tugas_akhir_kafka:9092",
-      "schema.history.internal.kafka.topic": "schemahistory.tugas_akhir"
+      "schema.history.internal.kafka.topic": "schemahistory.tugas_akhir",
       "table.whitelist": "tugas_akhir.users"
     }
   }'

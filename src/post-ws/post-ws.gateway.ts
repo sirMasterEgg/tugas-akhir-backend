@@ -17,7 +17,7 @@ import { User } from '../user/entities/user.entity';
 import { AuthWithRoles } from 'src/auth/auth.decorator';
 import { Punishment } from '../punishment/punishment.decorator';
 
-@WebSocketGateway(3001, {
+@WebSocketGateway({
   cors: {
     origin: '*',
   },
