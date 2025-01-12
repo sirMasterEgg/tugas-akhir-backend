@@ -65,7 +65,7 @@ export class QuestionReplyService {
       this.eventEmmiter.emit(
         Events.NOTIFICATION_CREATED,
         NotificationObserverDto.forNewAnswer({
-          room: [question.owner.id],
+          room: [question?.owner?.id],
           responderUsername: user.username,
           answer: questionReply.content,
         }),
