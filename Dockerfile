@@ -9,6 +9,7 @@
 #CMD ["npm", "start"]
 
 # Build stage
+ARG CACHE_BUST=1
 FROM node:20.5.1-slim as builder
 WORKDIR /usr/src/app
 COPY package.json ./
