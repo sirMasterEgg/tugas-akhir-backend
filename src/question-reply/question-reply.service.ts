@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateQuestionReplyDto } from './dto/create-question-reply.dto';
 import { UpdateQuestionReplyDto } from './dto/update-question-reply.dto';
-import { Repository } from 'typeorm';
+import { Repository, TypeORMError } from 'typeorm';
 import { QuestionReply } from './entities/question-reply.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Question } from '../user/entities/question.entity';
@@ -48,32 +48,39 @@ export class QuestionReplyService {
       throw new NotFoundException('Question not found');
     }
 
-    const questionReply = new QuestionReply();
-    questionReply.question = question;
-    questionReply.content = createQuestionReplyDto.content;
-    questionReply.anonymous = createQuestionReplyDto.anonymous;
-    questionReply.owner = user;
+    try {
+      const questionReply = new QuestionReply();
+      questionReply.question = question;
+      questionReply.content = createQuestionReplyDto.content;
+      questionReply.anonymous = createQuestionReplyDto.anonymous;
+      questionReply.owner = user;
 
-    const savedReply = await this.questionReplyRepository.save(questionReply);
+      const savedReply = await this.questionReplyRepository.save(questionReply);
 
-    const savedQuestionReply = await this.questionReplyRepository.findOne({
-      where: { id: savedReply.id },
-      relations: ['owner', 'upvoters'],
-    });
+      const savedQuestionReply = await this.questionReplyRepository.findOne({
+        where: { id: savedReply.id },
+        relations: ['owner', 'upvoters'],
+      });
 
-    this.eventEmmiter.emit(
-      Events.NOTIFICATION_CREATED,
-      NotificationObserverDto.forNewAnswer({
-        room: [question.owner.id],
-        responderUsername: user.username,
-        answer: questionReply.content,
-      }),
-    );
+      this.eventEmmiter.emit(
+        Events.NOTIFICATION_CREATED,
+        NotificationObserverDto.forNewAnswer({
+          room: [question.owner.id],
+          responderUsername: user.username,
+          answer: questionReply.content,
+        }),
+      );
 
-    return TrimmedQuestionReplyMapper.fromQuestionReply(
-      savedQuestionReply,
-      user,
-    );
+      return TrimmedQuestionReplyMapper.fromQuestionReply(
+        savedQuestionReply,
+        user,
+      );
+    } catch (e) {
+      if (e instanceof TypeORMError) {
+        Logger.error(e.message);
+      }
+      Logger.error(JSON.stringify(e));
+    }
   }
 
   update(
