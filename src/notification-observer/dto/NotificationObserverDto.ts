@@ -1,4 +1,5 @@
 import { Notification } from '../../user/entities/notification.entity';
+import { BadWord } from '../../validator/content-filtering.validator';
 
 export class NotificationObserverDto {
   room: string[];
@@ -63,7 +64,7 @@ export class NotificationObserverDto {
       room,
       notification: {
         title: 'New Question for You',
-        message: `${askerUsername} has asked you a question: '${question}'. Don't forget to provide your best answer!`,
+        message: `${askerUsername} has asked you a question: '${BadWord.masking(question)}'. Don't forget to provide your best answer!`,
       },
     });
   }
@@ -84,7 +85,7 @@ export class NotificationObserverDto {
       room,
       notification: {
         title: `New Question in ${groupName}`,
-        message: `There’s a new question from ${askerUsername} in the ${groupName} group: '${question}'. Check it out and share your thoughts!`,
+        message: `There’s a new question from ${askerUsername} in the ${groupName} group: '${BadWord.masking(question)}'. Check it out and share your thoughts!`,
       },
     });
   }
