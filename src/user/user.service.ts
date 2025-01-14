@@ -569,23 +569,32 @@ export class UserService {
         throw new NotFoundException('User not found');
       }
 
-      if (followUserDto.follow) {
-        currentUser.followUser = [...currentUser.followUser, userToFollow];
-      } else {
-        currentUser.followUser = currentUser.followUser.filter(
-          (followedUser) => followedUser.id !== userToFollow.id,
-        );
+      try {
+        if (followUserDto.follow) {
+          await this.userRepository
+            .createQueryBuilder()
+            .relation(User, 'followUser')
+            .of(currentUser)
+            .add(userToFollow);
+
+          this.eventEmmiter.emit(
+            Events.NOTIFICATION_CREATED,
+            NotificationObserverDto.forNewFollower({
+              room: [userToFollow.id],
+              followerUsername: user.username,
+            }),
+          );
+        } else {
+          await this.userRepository
+            .createQueryBuilder()
+            .relation(User, 'followUser')
+            .of(currentUser)
+            .remove(userToFollow);
+        }
+      } catch (e) {
+        console.log('error in update');
+        console.error(e);
       }
-
-      this.eventEmmiter.emit(
-        Events.NOTIFICATION_CREATED,
-        NotificationObserverDto.forNewFollower({
-          room: [userToFollow.id],
-          followerUsername: user.username,
-        }),
-      );
-
-      await this.userRepository.save(currentUser);
     }
     if (followUserDto.groupId) {
       const groupToFollow = await this.groupRepository.findOne({
